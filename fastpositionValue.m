@@ -639,7 +639,6 @@ king_table_endgame = [
             end    
         end
     end
-    value
    % Check if it's an endgame scenario
     if piecesLeft <= 6
         value = value + king_table_endgame(whiteKingRow, whiteKingCol);

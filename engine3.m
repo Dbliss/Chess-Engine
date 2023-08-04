@@ -1,4 +1,4 @@
-function [bestMove, bestValue, moveSequence, booked] = alphaBetaPruning(board, colour, positionValue, depth, alpha, beta, moveSequence, prevBest, hashTable, zKeys, book, ~)
+function [bestMove, bestValue, moveSequence, booked] = engine3(board, colour, positionValue, depth, alpha, beta, moveSequence, prevBest, hashTable, zKeys, book, bookTables, recursiveCap)
     booked = false;
     % Check if maximum depth has been reached or the game is over
     if depth == 0
@@ -6,15 +6,15 @@ function [bestMove, bestValue, moveSequence, booked] = alphaBetaPruning(board, c
         bestMove = [];
         return;
     end
+    
     % Get the Zobrist key for the current board position
-    zobristKey = calculateZobristKey(board, zKeys);
+    zobristKey = calculateZobristKeys2_mex(board, zKeys);
     
     % Retrieve the stored information for the position
     storedData = retrieveFromHashTable(hashTable, zobristKey);
 
     if book == 1
-        load('bookTable.mat');
-        bookDatas = retrieveFromHashTable(bookTable, zobristKey);
+        bookDatas = retrieveFromHashTable(bookTables.bookTable, zobristKey);
 
         if ~isempty(bookDatas)
             bestValue = bookDatas.value;
@@ -34,11 +34,15 @@ function [bestMove, bestValue, moveSequence, booked] = alphaBetaPruning(board, c
             booked = true;
             return;
         end
-               
+        
         % Check if the stored depth is at least the current depth
-        if storedData.depth >= depth && storedData.colour == colour
+        if storedData.depth >= depth
             % Use the stored value as an exact value or window for alpha-beta cutoff
-            if storedData.flag == "exact"
+            if storedData.value == Inf
+                bestValue = storedData.value;
+                bestMove = storedData.move;
+                return;
+            elseif storedData.flag == "exact"
                 bestValue = storedData.value;
                 bestMove = storedData.move;
                 return;
@@ -51,13 +55,6 @@ function [bestMove, bestValue, moveSequence, booked] = alphaBetaPruning(board, c
                 bestMove = storedData.move;
                 return
             end
-            
-            % Check if the stored bounds result in an alpha-beta cutoff
-            if alpha >= beta
-                bestValue = alpha;
-                bestMove = storedData.move;
-                return;
-            end
         elseif storedData.colour == colour && isempty(prevBest)
             prevBest = storedData.move;
         end
@@ -65,7 +62,7 @@ function [bestMove, bestValue, moveSequence, booked] = alphaBetaPruning(board, c
     end
     
     % Get all legal moves for the current player
-    legalMoves = getLegalMoves_mex(board);
+    legalMoves = getLegalMoves3_mex(board);
     % stalemate and checkmate
     if isempty(legalMoves)
         if (amIChecked(board, colour) == true)
@@ -78,7 +75,7 @@ function [bestMove, bestValue, moveSequence, booked] = alphaBetaPruning(board, c
             return
         end
     end
-    legalMoves = makeGoodMovesFirst(legalMoves , prevBest, board, colour);
+    legalMoves = makeGoodMovesFirst2(legalMoves , prevBest, board, colour);
 
     % Set the default best move and value to the first legal move
     bestMove = legalMoves(:,1);
@@ -90,30 +87,43 @@ function [bestMove, bestValue, moveSequence, booked] = alphaBetaPruning(board, c
         newBoard = makeMove(legalMoves(1,i), legalMoves(2, i), legalMoves(3,i), board);
         other_colour = otherColour(colour);
         firstMove = legalMoves(:,i);
-        newMoveSequence = [moveSequence, firstMove];        
-        
+        newMoveSequence = [moveSequence, firstMove];     
         inp = [];
-        [~, childValue, ~, ~] = alphaBetaPruning(newBoard, other_colour, positionValue, depth-1, -beta, -alpha, newMoveSequence, inp, hashTable, zKeys, book, book);
+        
+        % Lets do a reduced search depth for the worse looking moves
+        if legalMoves(4, i) < 0 && depth >= 2
+            if (legalMoves(5, i) == 3 && recursiveCap < 4)
+                [~, childValue, ~, ~] = engine3(newBoard, other_colour, positionValue, depth - 1, -beta, -alpha, newMoveSequence, inp, hashTable, zKeys, book, bookTables, recursiveCap + 1);
+            else
+                [~, childValue, ~, ~] = engine3(newBoard, other_colour, positionValue, depth - 2, -beta, -alpha, newMoveSequence, inp, hashTable, zKeys, book, bookTables, recursiveCap);
+            end
+        else
+            if (legalMoves(5, i) == 3 && recursiveCap < 4)
+                [~, childValue, ~, ~] = engine3(newBoard, other_colour, positionValue, depth, -beta, -alpha, newMoveSequence, inp, hashTable, zKeys, book, bookTables, recursiveCap + 1);
+            else
+                [~, childValue, ~, ~] = engine3(newBoard, other_colour, positionValue, depth-1, -beta, -alpha, newMoveSequence, inp, hashTable, zKeys, book, bookTables, recursiveCap);
+            end
+        end
         
         %good move for child is bad move for us
         childValue = -childValue;
         
         % stalemate condition
         % Get the Zobrist key for the current board position
-        zobristKeyz = calculateZobristKey(board, zKeys);
+        zobristKeyz = calculateZobristKeys2_mex(newBoard, zKeys);
     
         % Retrieve the stored information for the position
         storedDatas = retrieveFromHashTable(hashTable, zobristKeyz);
         if ~isempty(storedDatas)
-            if storedDatas.flag == "played" && colour == storedDatas.colour && storedDatas.depth == 2
-                childValue = 0;
+            if storedDatas.flag == "played" && storedDatas.depth >= 1
+                childValue = -10;
             end
         end
         
         % Update alpha and the best move if necessary
         if childValue >= beta
             bestValue = beta;
-            %bestMove = [];
+            bestMove = legalMoves(:,i);
              % Store the cutoff information in the hash table
             if ~isempty(storedData)
                if storedData.flag ~= "exact" || storedData.flag ~= "played"

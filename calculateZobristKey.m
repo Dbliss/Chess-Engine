@@ -5,6 +5,9 @@ function zobristKey = calculateZobristKey(board, zKeys)
     % Piece type mapping
     pieceConverter = [11 1; 12 2; 13 3; 14 4; 15 5; 16 6; 21 7; 22 8; 23 9; 24 10; 25 11; 26 12];
     
+    function ind = mySub2ind(boardSize, pieceType, squareIndex)
+        ind = (squareIndex - 1) * boardSize(1) + pieceType;
+    end
     
     % Iterate over the board
     for row = 1:8
@@ -17,7 +20,7 @@ function zobristKey = calculateZobristKey(board, zKeys)
                 squareIndex = (row-1) * 8 + col;
                 
                 % Update Zobrist key
-                zobInd = sub2ind([64 12], squareIndex, pieceType);
+                zobInd = mySub2ind([64 12], squareIndex, pieceType);
                 zobristKey = bitxor(zobristKey,zKeys(zobInd));
             end
         end
@@ -72,4 +75,13 @@ function zobristKey = calculateZobristKey(board, zKeys)
         zobristKey = bitxor(zobristKey, zKeys(798));
     end
   
+    
+%     % Is it white or blacks turn?
+%     if board(10, 1) == 1
+%         % whites turn
+%         zobristKey = bitxor(zobristKey, zKeys(798));
+%     else
+%         % blacks turn
+%         zobristKey = bitxor(zobristKey, zKeys(799));
+%     end
 end

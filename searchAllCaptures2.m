@@ -1,5 +1,5 @@
-function value = searchAllCaptures(board, colour, positionValue, alpha, beta)
-value = positionValue3_mex(board);
+function value = searchAllCaptures2(board, colour, positionValue, alpha, beta)
+value = positionValue2_mex(board, colour);
 
 % Update alpha and the best move if necessary
 if (value >= beta)
@@ -33,7 +33,7 @@ for i = 1:size(legalMoves, 2)
     newBoard = makeMove(legalMoves(1,i), legalMoves(2, i), legalMoves(3,i), board);
     other_colour = otherColour(colour);
     
-    childValue = searchAllCaptures(newBoard, other_colour, positionValue, -beta, -alpha);
+    childValue = searchAllCaptures2(newBoard, other_colour, positionValue, -beta, -alpha);
     
     %good move for child is bad move for us
     childValue = -childValue;

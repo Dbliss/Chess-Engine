@@ -1,4 +1,4 @@
-function board = initialiseBoard()
+function board = initialiseBoard3()
 board = zeros(10,8);
 % 11 = white pawn
 % 12 = white knight
@@ -15,10 +15,25 @@ board = zeros(10,8);
 % 26 = black king
 
 % Initialising pawns
-for i=1:8
-    board(2,i) = 21;
-    board(7,i) = 11;
-end
+board(2,1) = 21;
+board(2,3) = 21;
+board(2,4) = 21;
+board(2,6) = 21;
+board(5,2) = 21;
+board(6,8) = 21;
+board(3,5) = 21;
+board(3,7) = 21;
+
+board(7,1) = 11;
+board(7,2) = 11;
+board(7,3) = 11;
+board(7,6) = 11;
+board(7,7) = 11;
+board(7,8) = 11;
+board(4,4) = 11;
+board(5,5) = 11;
+
+    
 % Initialising rooks
 board(1,1) = 24;
 board(1,8) = 24;
@@ -26,20 +41,20 @@ board(8,1) = 14;
 board(8,8) = 14;
 
 % Initialising bishops
-board(1,3) = 23;
-board(1,6) = 23;
-board(8,3) = 13;
-board(8,6) = 13;
+board(2,7) = 23;
+board(3,1) = 23;
+board(7,4) = 13;
+board(7,5) = 13;
 
 % Initialising knights
-board(1,2) = 22;
-board(1,7) = 22;
-board(8,2) = 12;
-board(8,7) = 12;
+board(3,2) = 22;
+board(3,6) = 22;
+board(6,3) = 12;
+board(4,5) = 12;
 
 % Initialising Queens
-board(1,4) = 25;
-board(8,4) = 15;
+board(2,5) = 25;
+board(6,6) = 15;
 
 % Initialising Kings
 board(1,5) = 26;
@@ -59,21 +74,6 @@ board(9,5) = 0;
 % 9, 6 is whether black right rook has moved (0 = no, 1 = yes)
 board(9,6) = 0;
 
-% 9, 7 is the column of which white moved a pawn twice (meaning black can
-% en passant that square)
-
-% 9, 8 is the column of which black moved a pawn twice (meaning white can
-% en passant that square)
-
-board(10, 1) = 1;
-% 10, 1 is whether its white or blacks turn (1 = white, 2 = black)
-
-board(10, 2) = 0; % left white castle
-
-board(10, 3) = 0; % right white castle
-
-board(10, 4) = 0; % left black castle
-
-board(10, 5) = 0; % right black castle
+board(10,1) = 1;
 
 end

@@ -1,6 +1,4 @@
 function moves = makeGoodMovesFirst(legalMoves, prevBest, board, colour)
-
-
 % need to estimate how good each move is
 
 % If a piece moves under attack of pawn, its probably bad
@@ -19,13 +17,13 @@ if colour == 1
         if postPosY-1 > 0 && postPosX+1 < 9
             if board(postPosY-1, postPosX+1) == 21
                 if piece == 15
-                    legalMoves(4, i) = legalMoves(4, i)-4;
+                    legalMoves(4, i) = legalMoves(4, i)-7;
                 elseif piece == 14
-                    legalMoves(4, i) = legalMoves(4, i)-3;
+                    legalMoves(4, i) = legalMoves(4, i)-4;
                 elseif piece == 13
                     legalMoves(4, i) = legalMoves(4, i)-2;
                 elseif piece == 12
-                    legalMoves(4, i) = legalMoves(4, i)-1;
+                    legalMoves(4, i) = legalMoves(4, i)-2;
                 end
             end
         end
@@ -33,11 +31,11 @@ if colour == 1
         if postPosY-1 > 0 && postPosX-1 > 0
             if board(postPosY-1, postPosX-1) == 21
                 if piece == 15
-                    legalMoves(4, i) = legalMoves(4, i)-5;
+                    legalMoves(4, i) = legalMoves(4, i)-7;
                 elseif piece == 14
                     legalMoves(4, i) = legalMoves(4, i)-4;
                 elseif piece == 13
-                    legalMoves(4, i) = legalMoves(4, i)-3;
+                    legalMoves(4, i) = legalMoves(4, i)-2;
                 elseif piece == 12
                     legalMoves(4, i) = legalMoves(4, i)-2;
                 end
@@ -57,13 +55,13 @@ if colour == 2
         if postPosY+1 < 9 && postPosX+1 < 9
             if board(postPosY+1, postPosX+1) == 11
                 if piece == 25
-                    legalMoves(4, i) = legalMoves(4, i)-4;
+                    legalMoves(4, i) = legalMoves(4, i)-7;
                 elseif piece == 24
-                    legalMoves(4, i) = legalMoves(4, i)-3;
+                    legalMoves(4, i) = legalMoves(4, i)-4;
                 elseif piece == 23
                     legalMoves(4, i) = legalMoves(4, i)-2;
                 elseif piece == 22
-                    legalMoves(4, i) = legalMoves(4, i)-1;
+                    legalMoves(4, i) = legalMoves(4, i)-2;
                 end
             end
         end
@@ -71,13 +69,13 @@ if colour == 2
         if postPosY+1 < 9 && postPosX-1 > 0
             if board(postPosY+1, postPosX-1) == 11
                 if piece == 25
-                    legalMoves(4, i) = legalMoves(4, i)-4;
+                    legalMoves(4, i) = legalMoves(4, i)-7;
                 elseif piece == 24
-                    legalMoves(4, i) = legalMoves(4, i)-3;
+                    legalMoves(4, i) = legalMoves(4, i)-4;
                 elseif piece == 23
                     legalMoves(4, i) = legalMoves(4, i)-2;
                 elseif piece == 22
-                    legalMoves(4, i) = legalMoves(4, i)-1;
+                    legalMoves(4, i) = legalMoves(4, i)-2;
                 end
             end
         end
@@ -93,6 +91,7 @@ moves = legalMoves;
 % Get the third row
 third_row = moves(4, :);
 
+
 % Sort the third row in descending order and get the indices
 [~, sorted_indices] = sort(third_row, 'descend');
 
@@ -103,10 +102,16 @@ moves = sorted_vector;
 
 if ~isempty(prevBest)
     % Find the index of the previous best move in the legalMoves array
-    for i = 1:size(legalMoves, 2)
-       if legalMoves(:, i) == prevBest
-           moves = [prevBest, moves(:, 1:i-1), moves(:, i+1:end)];
-       end   
+    prevBestIndex = find(all(moves == prevBest, 1));
+    
+    if ~isempty(prevBestIndex)
+        % Move the prevBest move to the front
+        moves = [prevBest, moves(:, 1:prevBestIndex-1), moves(:, prevBestIndex+1:end)];
+        
+        % Update its value to be the same as the value of the move at the second position
+        if moves(4, 2) > moves(4, 1)
+            moves(4, 1) = moves(4, 2);
+        end
     end
 end
 

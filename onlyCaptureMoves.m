@@ -9,5 +9,9 @@ function movesReordered = onlyCaptureMoves(legalMoves, board, colour)
     % Keep only the columns with the good indices
     moves = legalMoves(:, good_indices);
     
-    movesReordered = makeGoodMovesFirst(moves, [], board, colour);
+    if size(moves,2) <= 54
+        movesReordered = makeGoodMovesFirst3_mex(moves, board);
+    else
+        movesReordered = makeGoodMovesFirst2(moves, [], board, colour);
+    end
 end

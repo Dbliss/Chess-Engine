@@ -1,10 +1,10 @@
-function value = positionValue(board, colour)
+function value = positionValue2(board, colour)
     pawnVal = 100;
     knightVal = 325;
     bishopVal = 325;
     rookVal = 500;
     queenVal = 975;
-   
+
     % if colour = 1, then its whites turn to move
     % if colour = 2, then its blacks turn to move
     
@@ -18,6 +18,17 @@ pawn_table = [
      5  -5 -10   0   0 -10  -5   5;
      5  10  10 -20 -20  10  10   5;
      0   0   0   0   0   0   0   0
+];
+
+pawn_table_endgame = [
+    0  0  0  0  0  0  0  0;
+    50 50 50 50 50 50 50 50;
+    40 40 40 40 40 40 40 40;
+    30 30 30 30 30 30 30 30;
+    20 20 20 20 20 20 20 20;
+    10 10 10 10 10 10 10 10;
+    0  0  0  0  0  0  0  0;
+    0  0  0  0  0  0  0  0
 ];
 
 knight_table = [
@@ -127,6 +138,8 @@ king_table_endgame = [
     piecesLeft = size(knightRow, 1) + size(blackKnightRow, 1) + size(bishopRow, 1) + size(bBishopRow, 1) + size(rookRow, 1) + size(brookRow, 1) + size(wQueenRow, 1) + size(bQueenRow, 1);
     
     numOfPawns = size(pawnRow, 1) + size(blackPawnRow, 1);
+
+    queensOnBoard = size(wQueenRow, 1) + size(bQueenRow, 1);
     
     % For strength of bishop pair
     bishopPairStength = -1/5*(numOfPawns-16)*(numOfPawns+16);
@@ -134,6 +147,41 @@ king_table_endgame = [
     % For strength of small pieces (knight/bishop)
     m=-0.01648351648;
     smallPieceMultiplier = -m*piecesLeft + 12*m + 1;
+
+    wCastledLeft = false;
+    wCastledRight = false;
+    bCastledLeft = false;
+    bCastledRight = false;
+    if piecesLeft > 10 || queensOnBoard >= 2
+        % Has either side castled
+        if board(10, 2) == 1
+            wCastledLeft = true;
+            value = value + 50;
+        end
+        
+        if board(10, 3) == 1
+            wCastledRight = true;
+            value = value + 50;
+        end
+        
+        if board(9, 1) == 1 && ~wCastledLeft && ~wCastledRight
+            value = value - 50; %missed out on castling
+        end
+        
+        if board(10, 4) == 1
+            bCastledLeft = true;
+            value = value - 50;
+        end
+        
+        if board(10, 5) == 1
+            bCastledRight = true;
+            value = value - 50;
+        end
+        
+        if board(9, 4) == 1 && ~bCastledRight && ~bCastledLeft
+            value = value + 50; %missed out on castling
+        end
+    end
     
     value = value + pawnVal*size(pawnRow, 1);
     value = value - pawnVal*size(blackPawnRow, 1);
@@ -149,7 +197,7 @@ king_table_endgame = [
     
     value = value + queenVal*size(wQueenRow, 1);
     value = value - queenVal*size(bQueenRow, 1);
-    
+
     %add values of all white pawn positioning
     %by another pawn
     for i = 1:size(pawnRow, 1)
@@ -157,11 +205,7 @@ king_table_endgame = [
         westCol = pawnCol(i)-1;
         eastCol = pawnCol(i)+1;
         
-        value = value + pawn_table(pawnRow(i), pawnCol(i));
-        
-        if piecesLeft <= 6 && size(rookRow, 1) == 0 && size(wQueenRow, 1) == 0
-            value = value + (7 - pawnRow(i))*35;
-        end
+        value = value + piecesLeft/14 * pawn_table(pawnRow(i), pawnCol(i)) + (14-piecesLeft)/14 * pawn_table_endgame(pawnRow(i), pawnCol(i));
         
         % Reduce points for doubled up pawns
         if northRow < 9
@@ -170,10 +214,11 @@ king_table_endgame = [
             end
         end
         
+        % pawn structure
         if northRow < 9 && westCol > 0
             % looking at piece north west of white pawn
             if board(northRow,westCol) == 11
-                value = value + 5;
+                value = value + 15;
             elseif board(northRow,westCol) == 12
                 value = value + 5;
             elseif board(northRow,westCol) == 13
@@ -188,7 +233,7 @@ king_table_endgame = [
         if northRow < 9 && eastCol < 9
             % looking at piece north east of white pawn
             if board(northRow,eastCol) == 11
-                value = value + 5;
+                value = value + 15;
             elseif board(northRow,eastCol) == 12
                 value = value + 5;
             elseif board(northRow,eastCol) == 13
@@ -199,6 +244,31 @@ king_table_endgame = [
                 value = value + 5;
             end  
         end
+        
+        % check if pawn is a passed pawn
+        passedPawn = true;
+        for j = 1:size(blackPawnRow, 1)
+            if blackPawnCol(j) == pawnCol(i) || blackPawnCol(j)+1 == pawnCol(i) || blackPawnCol(j) -1 == pawnCol(i)
+                passedPawn = false;
+                break;
+            end
+        end
+        
+        if passedPawn == true
+           value = value + 100 / (piecesLeft + 1) * (8 - pawnRow(i));
+           
+           % can the king catch it?
+           if board(10, 1) == 1
+               if ~(all(abs(bcol - pawnCol(i)) <= (pawnRow(i) - 1)) && all(brow <= pawnRow(i)))
+                   value = value + 300 / (piecesLeft + 1);
+               end               
+           else
+               if ~(all(abs(bcol - pawnCol(i)) <= (pawnRow(i))) && all(brow+1 <= pawnRow(i)))
+                   value = value + 300 / (piecesLeft + 1);
+               end
+           end
+        end
+        
     end
 
     %add values of all black pawn positioning
@@ -206,11 +276,7 @@ king_table_endgame = [
         southRow = blackPawnRow(i)+1;
         westCol = blackPawnCol(i)-1;
         eastCol = blackPawnCol(i)+1;
-        value = value - pawn_table(9-blackPawnRow(i), blackPawnCol(i));
-        
-        if piecesLeft <= 6 && size(brookRow, 1) == 0 && size(bQueenRow, 1) == 0
-            value = value - (blackPawnRow(i)-2)*35;
-        end
+        value = value - piecesLeft/14 * pawn_table(9-blackPawnRow(i), blackPawnCol(i)) - (14-piecesLeft)/14 * pawn_table_endgame(9-blackPawnRow(i), blackPawnCol(i));
         
         % Reduce points for doubled up pawns
         if southRow > 0
@@ -219,11 +285,11 @@ king_table_endgame = [
             end
         end
         
-        
+        % pawn structure 
         if southRow > 0 && westCol > 0
             % looking at piece south west of black pawn
             if board(southRow,westCol) == 21
-                value = value - 5;
+                value = value - 15;
             elseif board(southRow,westCol) == 22
                 value = value - 5;
             elseif board(southRow,westCol) == 23
@@ -238,7 +304,7 @@ king_table_endgame = [
         if southRow > 0 && eastCol < 9
             % looking at piece north east of black pawn
             if board(southRow,eastCol) == 21
-                value = value - 5;
+                value = value - 15;
             elseif board(southRow,eastCol) == 22
                 value = value - 5;
             elseif board(southRow,eastCol) == 23
@@ -250,9 +316,30 @@ king_table_endgame = [
             end
         end
         
+        % check if pawn is a passed pawn
+        passedPawn = true;
+        for j = 1:size(pawnRow, 1)
+            if blackPawnCol(i) == pawnCol(j) || blackPawnCol(i) == pawnCol(j) + 1 || blackPawnCol(i) == pawnCol(j) -1
+                passedPawn = false;
+                break;
+            end
+        end
+        
+        if passedPawn == true
+           value = value - 100 / (piecesLeft + 1) * (blackPawnRow(i));
+           
+           % can the king catch it?
+           if board(10, 1) == 1
+               if ~(all(abs(wcol - blackPawnCol(i)) <= (9 - blackPawnRow(i))) && all(wrow >= blackPawnRow(i)-1))
+                   value = value - 300 / (piecesLeft + 1);
+               end               
+           else
+               if ~(all(abs(wcol - blackPawnCol(i)) <= (8 - blackPawnRow(i))) && all(wrow >= blackPawnRow(i)))
+                   value = value - 300 / (piecesLeft + 1);
+               end 
+           end
+        end
     end
-
-    
      
     %add value if knight if central
     for i = 1:size(knightRow, 1)
@@ -264,7 +351,6 @@ king_table_endgame = [
         value = value - knight_table(9-blackKnightRow(i), blackKnightCol(i));
     end
    
-
     %add value if bishops are in optimal postions
     for i = 1:size(bishopRow, 1)
         row = bishopRow(i);
@@ -511,82 +597,88 @@ king_table_endgame = [
         col = bQueenCol(i);
         value = value - queen_table(9-row, col);
     end
-    
-    queensOnBoard = size(wQueenRow, 1) + size(bQueenRow, 1);
-    
-    if piecesLeft >= 4 && queensOnBoard > 0
-        for i = 1:size(wrow, 1)
-            value = value + king_table_midgame(wrow(i), wcol(i));
 
-            %king safety and mobility
-            if bcol(i) == 7 || bcol(i) == 8 || bcol(i) == 1 || bcol(i) == 2
-               if board(brow(i)+1, bcol(i)) == 0
-                   value = value - 40;
-               else
-                   value = value + 15;
-               end
+    % white king position value
+    value = value + piecesLeft/14 * king_table_midgame(wrow, wcol) + (14-piecesLeft)/14*king_table_endgame(wrow, wcol);
+
+    % white king safety
+    keyWhitePawn = false;
+    % First we check our pawn structure around the king
+    for j = 1:size(pawnRow, 1)
+        row_distance = wrow - pawnRow(j);
+        col_distance = abs(pawnCol(j) - wcol);
+
+        % Check if the pawn is next to or infront of king
+        if all(row_distance <= 2) && all(row_distance >= 0) && all(col_distance <= 1)
+            value = value + 10;
+        end
+        
+        % Now we check if king is open
+        if wCastledLeft
+            if pawnCol(j) == 2
+                keyWhitePawn = true;
             end
-
-            if wcol(i)-1 > 0
-                if board(wrow(i), wcol(i)-1) == 0
-                    value = value + 5;
-                end    
+        elseif wCastledRight
+            if pawnCol(j) == 7
+                keyWhitePawn = true;
             end
+        end
+    end
+    
+    if piecesLeft > 10 || queensOnBoard >= 2
+        % reduce position value if key defensive pawn is missing
+        if (wCastledLeft || wCastledRight) && keyWhitePawn == false
+            value = value - 80; % should multiply by threat level
+        end
+    end
 
-            if wcol(i)+1 < 9
-                if board(wrow(i), wcol(i)+1) == 0
-                    value = value + 5;
-                end    
+    % black king position value
+    value = value - piecesLeft/14 * king_table_midgame(9-brow, bcol) - (14-piecesLeft)/14*king_table_endgame(9-brow, bcol);
+
+    % black king safety
+    keyBlackPawn = false;
+    % First we check our pawn structure around the king
+    for j = 1:size(blackPawnRow, 1)
+        row_distance = blackPawnRow(j) - brow;
+        col_distance = abs(blackPawnCol(j) - bcol);
+
+        % Check if the pawn is next to or infront of king
+        if all(row_distance <= 2) && all(row_distance >= 0) && all(col_distance <= 1)
+            value = value - 10;
+        end
+        
+        % Now we check if king is open
+        if bCastledLeft
+            if pawnCol(j) == 2
+                keyBlackPawn = true;
+            end
+        elseif bCastledRight
+            if pawnCol(j) == 7
+                keyBlackPawn = true;
             end
         end
     end
 
-    
-    if piecesLeft >= 4 && queensOnBoard > 0
-        for i = 1:size(brow, 1)
-            value = value - king_table_midgame(9-brow(i), bcol(i));
-
-            %king safety and mobility
-            if bcol(i) == 7 || bcol(i) == 8 || bcol(i) == 1 || bcol(i) == 2
-               if board(brow(i)+1, bcol(i)) == 0
-                   value = value + 40;
-               else
-                   value = value - 15;
-               end
-            end
-
-            if bcol(i)-1 > 0
-                if board(brow(i), bcol(i)-1) == 0
-                    value = value - 5;
-                end    
-            end
-
-            if bcol(i)+1 < 9
-                if board(brow(i), bcol(i)+1) == 0
-                    value = value - 5;
-                end    
-            end
+    if piecesLeft > 10 || queensOnBoard >= 2
+        % reduce position value if key defensive pawn is missing
+        if (bCastledLeft || bCastledRight) && keyBlackPawn == false
+            value = value + 80; % should multiply by threat level
         end
     end
     
    % Check if it's an endgame scenario
-    if piecesLeft <= 4 || queensOnBoard == 0
-        for i = 1:size(brow, 1)
-            value = value + king_table_endgame(wrow(i), wcol(i));
-            value = value - king_table_endgame(9-brow(i), bcol(i));
-            
-            if value > 400
-                distBetweenKings = sqrt((wrow(i) - brow(i))^2 + (wcol(i) - bcol(i))^2);
-                value = value + 140 - 20*distBetweenKings;
-            elseif value < -400
-                distBetweenKings = sqrt((wrow(i) - brow(i))^2 + (wcol(i) - bcol(i))^2);
-                value = value - 140 + 20*distBetweenKings;
-            end
+    if piecesLeft <= 4 || queensOnBoard == 0      
+        if value > 400
+            distBetweenKings = sqrt((wrow - brow)^2 + (wcol - bcol)^2);
+            value = value + 140 - 20*distBetweenKings;
+        elseif value < -400
+            distBetweenKings = sqrt((wrow - brow)^2 + (wcol - bcol)^2);
+            value = value - 140 + 20*distBetweenKings;
         end
-        
-        % incentivise trading with an advantage
-        value = value*20/(piecesLeft+numOfPawns+2);
     end
+
+    % incentivise trading with an advantage
+    value = value + value*5/(piecesLeft+numOfPawns+2);
 
     
     if colour == 2

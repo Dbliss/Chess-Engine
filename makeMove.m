@@ -42,23 +42,29 @@ function board = makeMove(priorPos, postPos, piece, board)
        board(9,6) = 1; 
     end
     
+    % black castling
     if (piece == 26) && abs(priorPosY-postPosY) > 1
         if postPos == 13
             board(1, 4) = 24;
             board(1, 1) = 0;
+            board(10, 4) = 1; %left black castle
         elseif postPos == 17
             board(1, 6) = 24;
             board(1, 8) = 0;
+            board(10, 5) = 1;%right black castle
         end
     end
     
+    % white castling
     if (piece == 16) && abs(priorPosY-postPosY) > 1
         if postPos == 83
             board(8, 4) = 14;
             board(8, 1) = 0;
+            board(10, 2) = 1; %left white castle
         elseif postPos == 87
             board(8, 6) = 14;
             board(8, 8) = 0;
+            board(10, 2) = 1; %left right castle
         end
     end
     
@@ -74,4 +80,11 @@ function board = makeMove(priorPos, postPos, piece, board)
          board(9, 8) = 0;
     end
     
+    % white moved so its now blacks turn
+    if piece > 10 && piece < 20
+        board(10,1) = 2;
+    else
+        % Otherwise black moved so its whites turn
+        board(10,1) = 1;
+    end
 end

@@ -1,4 +1,4 @@
-function check = fastamIChecked(board)
+function check = amIChecked(board, colour)
 check = false;
 % Find the location of the kings
 whiteKingRow = 0;
@@ -19,7 +19,7 @@ for i = 1:8
     end
 end
 
-if board(10,1) == 1
+if colour == 1
     
     safeNorth = false;
     safeEast = false;
@@ -189,7 +189,7 @@ if board(10,1) == 1
     
 end
 
-if board(10,1) == 2
+if colour == 2
 
     
     safeNorth = false;

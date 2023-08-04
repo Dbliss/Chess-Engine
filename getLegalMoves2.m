@@ -1,4 +1,7 @@
 function actualLegalMoves = getLegalMoves2(board)
+    % Declare fastamIChecked_mex as an extrinsic function
+    coder.extrinsic('fastamIChecked_mex');
+
     % Preallocate memory for legalMoves with the maximum possible number of moves
     maxNumMoves = 200;
     legalMoves = zeros(5, maxNumMoves);
@@ -701,8 +704,8 @@ function actualLegalMoves = getLegalMoves2(board)
         else
             testerBoard(10, 1) = 2;
         end
-        checked = fastestamIChecked(testerBoard);
-        if checked == 0
+        checked = fastamIChecked_mex(testerBoard);
+        if ~checked
             actualLegalMoves(:, j) = legalMoves(:, i);
             j = j+1;
         end
